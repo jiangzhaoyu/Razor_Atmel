@@ -98,6 +98,14 @@ void UserApp1Initialize(void)
     /* The task isn't properly initialized, so shut it down and don't run */
     UserApp1_StateMachine = UserApp1SM_FailedInit;
   }
+  LedOff(PURPLE);
+  LedOff(RED);
+  LedOff(WHITE);
+  LedOff(BLUE);
+  LedOff(CYAN);
+  LedOff(YELLOW);
+  LedOff(GREEN);
+  LedOff(ORANGE);
 
 } /* end UserApp1Initialize() */
 
@@ -135,15 +143,91 @@ State Machine Function Definitions
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
+{  static u8 u8InputPassword[]={9,9,9,9,9,9};
+  static u8 InputPasswordCount=0;
+  u8 tempButtonValue;
+  tempButtonValue=GetButtonValue();
+  
+  
+  
+  
+  
+  if(WasButtonPressed(BUTTON0)&&u32pressnumber == 1)
 {
+  ButtonAcknowledge(BUTTON1);
+  LedBlink(RED,LED_0_5HZ);
+  LedOff(RED);
+  u32number=10000;
+}
+  if(WasButtonPressed(BUTTON1)&&u32pressnumber == 1)
+  { 
+    ButtonAcknowledge(BUTTON1);
+    LedBlink(RED,LED_0_5HZ);
+  LedOff(RED);
+  u32number=20000;
+  }
+ if(WasButtonPressed(BUTTON1)&&u32pressnumber == 2)
+  { 
+    ButtonAcknowledge(BUTTON1);
+    LedBlink(RED,LED_0_5HZ);
+  LedOff(RED);
+  u32number=22000;
+  }
+   if(WasButtonPressed(BUTTON2)&&u32pressnumber == 3)
+  { 
+    ButtonAcknowledge(BUTTON2);
+    LedBlink(RED,LED_0_5HZ);
+  LedOff(RED);
+  u32number=22300;
+  }
+ if(WasButtonPressed(BUTTON2)&&u32pressnumber == 4)
+  { 
+    ButtonAcknowledge(BUTTON2);
+    LedBlink(RED,LED_0_5HZ);
+  LedOff(RED);
+  u32number=223300;
+  }
+   if(WasButtonPressed(BUTTON3)&&u32pressnumber == 5)
+  { 
+    ButtonAcknowledge(BUTTON3);
+    LedBlink(RED,LED_0_5HZ);
+  LedOff(RED);
+  u32number=223340;
+  }
+     if(WasButtonPressed(BUTTON3)&&u32pressnumber == 6)
+  { 
+    ButtonAcknowledge(BUTTON3);
+    LedBlink(RED,LED_0_5HZ);
+  LedOff(RED);
+  u32number=223344;
+  }
+  }
+   if(u32number ==223344)
+   {
+     LedOn(WHITE);
+   }
+  else
+  {
+    LedOn(PURPLE);
+  }
+   
+
     
+ 
+    
+    
+
+   
+   
 } /* end UserApp1SM_Idle() */
      
 #if 0
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Handle an error */
 static void UserApp1SM_Error(void)          
-{
+{ 
+  
+    
   
 } /* end UserApp1SM_Error() */
 #endif
