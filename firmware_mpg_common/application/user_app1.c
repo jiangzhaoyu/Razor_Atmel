@@ -134,8 +134,33 @@ void UserApp1RunActiveState(void)
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Private functions                                                                                                  */
 /*--------------------------------------------------------------------------------------------------------------------*/
-
-
+static u8 GetButtonValue(void)
+{
+  static u8 u8ButtonValue=0;
+  if(WasButtonPressed(BUTTON0))
+  {
+    ButtonAcknowledge(BUTTON0);
+    u8ButtonValue=1;
+  }
+  if(WasButtonPressed(BUTTON1))
+  {
+    ButtonAcknowledge(BUTTON1);
+    u8ButtonValue=2; 
+  }
+  if(WasButtonPressed(BUTTON2))
+  {
+    ButtonAcknowledge(BUTTON2);
+    u8ButtonValue=3;
+  }
+  if(WasButtonPressed(BUTTON3))
+  {
+    ButtonAcknowledge(BUTTON3);
+    u8ButtonValue=4;
+  }
+  return u8ButtonValue;
+  
+}
+  
 /**********************************************************************************************************************
 State Machine Function Definitions
 **********************************************************************************************************************/
@@ -143,73 +168,64 @@ State Machine Function Definitions
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
-{  static u8 u8InputPassword[]={9,9,9,9,9,9};
-  static u8 InputPasswordCount=0;
+{ 
+  static u8 u8InputPassword[]={9,9,9,9,9,9};
+  static u8 u8InputPasswordCount=0;
+  static u8 u8RealPassword[]={2,2,3,3,4,4};
+  static u8 u8IsPassword=1;   
+  static u32 u32Counter=0;
+ 
+  u8 u8Index;
   u8 tempButtonValue;
-  tempButtonValue=GetButtonValue();
   
-  
-  
-  
-  
-  if(WasButtonPressed(BUTTON0)&&u32pressnumber == 1)
-{
-  ButtonAcknowledge(BUTTON1);
-  LedBlink(RED,LED_0_5HZ);
-  LedOff(RED);
-  u32number=10000;
-}
-  if(WasButtonPressed(BUTTON1)&&u32pressnumber == 1)
-  { 
-    ButtonAcknowledge(BUTTON1);
-    LedBlink(RED,LED_0_5HZ);
-  LedOff(RED);
-  u32number=20000;
-  }
- if(WasButtonPressed(BUTTON1)&&u32pressnumber == 2)
-  { 
-    ButtonAcknowledge(BUTTON1);
-    LedBlink(RED,LED_0_5HZ);
-  LedOff(RED);
-  u32number=22000;
-  }
-   if(WasButtonPressed(BUTTON2)&&u32pressnumber == 3)
-  { 
-    ButtonAcknowledge(BUTTON2);
-    LedBlink(RED,LED_0_5HZ);
-  LedOff(RED);
-  u32number=22300;
-  }
- if(WasButtonPressed(BUTTON2)&&u32pressnumber == 4)
-  { 
-    ButtonAcknowledge(BUTTON2);
-    LedBlink(RED,LED_0_5HZ);
-  LedOff(RED);
-  u32number=223300;
-  }
-   if(WasButtonPressed(BUTTON3)&&u32pressnumber == 5)
-  { 
-    ButtonAcknowledge(BUTTON3);
-    LedBlink(RED,LED_0_5HZ);
-  LedOff(RED);
-  u32number=223340;
-  }
-     if(WasButtonPressed(BUTTON3)&&u32pressnumber == 6)
-  { 
-    ButtonAcknowledge(BUTTON3);
-    LedBlink(RED,LED_0_5HZ);
-  LedOff(RED);
-  u32number=223344;
-  }
-  }
-   if(u32number ==223344)
-   {
-     LedOn(WHITE);
-   }
-  else
+  tempButtonValue=GetButtonValue();  
+  u32Counter++;
+  if(tempButtonValue)
   {
-    LedOn(PURPLE);
+    LedOn(RED);
+    if(u32Counter == 100)
+  {
+    LedOff(RED);
+    u32Counter=0;
   }
+  }
+  
+ 
+  if(tempButtonValue!=9)
+  {
+    u8InputPassword[u8InputPasswordCount]=tempButtonValue;
+    u8InputPasswordCount++;
+  }
+    if(u8InputPasswordCount == 6)
+    {
+      for(u8Index=0;u8Index<6;u8Index++)
+      {
+        if(u8InputPassword[u8Index]!=u8RealPassword[u8Index])
+        {
+          u8IsPassword=0;
+          break;
+        }
+      }
+    
+      if(u8IsPassword)
+      {
+        LedOn(WHITE);
+        LedOff(PURPLE);
+      }
+      else
+      {
+        LedOn(PURPLE);
+        LedOff(WHITE);
+        }
+    }
+  
+  
+  
+  
+  
+  
+   
+  
    
 
     
