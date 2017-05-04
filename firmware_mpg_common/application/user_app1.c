@@ -136,7 +136,7 @@ void UserApp1RunActiveState(void)
 /*--------------------------------------------------------------------------------------------------------------------*/
 static u8 GetButtonValue(void)
 {
-   static u8 u8ButtonValue=0;
+   u8 u8ButtonValue=0;
    if(WasButtonPressed(BUTTON0))
   {
     ButtonAcknowledge(BUTTON0);
@@ -167,77 +167,96 @@ State Machine Function Definitions
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
 { 
-   static u8 u8InputPassword[20]={0};
+   static u8 u8InputPassword[20];
    static u8 u8InputPasswordCount=0;
-   static u8 u8RealPassword[20]={9};
+   static u8 u8RealPassword[20];
    static u8 u8RealPasswordCount=0;
-   static u8 u8IsPasswardRight=1;
+   u8 u8IsPasswardRight=1;
    static bool IsButton3Pressed=FALSE;
-    u8 u8Index;
-    u8 tempButtonValue;
-    u8 InputButtonValue;
+   static u8 tempButtonValue;
+   static u8 InputButtonValue;                             
+   u8 u8Index;
+   static u8 u8counter=0;
+   
    
   if(IsButtonHeld(BUTTON3,1000))
   {
+    LedOff(RED);
+    LedOff(GREEN);
     LedBlink(RED, LED_2HZ);
     LedBlink(GREEN, LED_2HZ);
     IsButton3Pressed=FALSE;
-     u8RealPasswordCount=0;
   }
   
- 
-     tempButtonValue=GetButtonValue();
-  
- 
-   
-  if((tempButtonValue!=0)&&(tempButtonValue!=4))
+ if(IsButton3Pressed == FALSE)
+ {
+    tempButtonValue=GetButtonValue();
+  if(tempButtonValue!=0)
   {
-    if((tempButtonValue!=9)&&(IsButton3Pressed == FALSE))
+    if(tempButtonValue!=4)
     {
        u8RealPassword[u8RealPasswordCount]=tempButtonValue;
        u8RealPasswordCount++;
     }
-  }
-  if(tempButtonValue == 4)
-  {
-     IsButton3Pressed=TRUE;
-  }
   
-  
-  if(IsButton3Pressed == TRUE)
+    if(tempButtonValue == 4)
+    {  
+      if( u8RealPasswordCount!=0)
+       {
+         IsButton3Pressed=TRUE;
+         LedOff(RED);
+         LedOff(GREEN);
+         LedOn(RED);
+         u8counter=u8RealPasswordCount;
+         u8RealPasswordCount=0;
+       }
+    }
+  }
+ }
+ 
+ if(IsButton3Pressed == TRUE)
   { 
-    LedOn(RED);
-    LedOff(GREEN);
-    InputButtonValue=GetButtonValue();
+    InputButtonValue=GetButtonValue();   
     if((InputButtonValue!=0)&&(InputButtonValue!=4))
     {
       u8InputPassword[u8InputPasswordCount]=InputButtonValue;
       u8InputPasswordCount++;
     }
+    
     if(InputButtonValue == 4)
-    { 
-      u8InputPasswordCount=0;
-      for(u8Index=0;u8Index<= u8InputPasswordCount;u8Index++)
+    {
+     if(u8InputPasswordCount == u8counter)
      {
-       if(u8InputPassword[u8Index]!=u8RealPassword[u8Index])
-       {
+      u8InputPasswordCount=0;
+      for(u8Index=0;u8Index< u8counter;u8Index++)
+      {
+        if(u8InputPassword[u8Index]!=u8RealPassword[u8Index])
+        {
          u8IsPasswardRight=0;
          break;
-       }
-     }
-     if(u8IsPasswardRight == 0)
-     {
-       LedOff(RED);
-       LedBlink(RED, LED_2HZ);
-     }
-     else 
-     {
-        LedBlink(GREEN, LED_2HZ);
+        }
+      }
+   
+      if(u8IsPasswardRight)
+      {       
+        LedBlink(GREEN,LED_2HZ);
         LedOff(RED);
+      }
+      else 
+      {       
+       LedBlink(RED,LED_2HZ);
+       LedOff(GREEN);
+      }
+    }
+   else 
+     {
+     
+      u8InputPasswordCount=0;
+      LedBlink(RED,LED_2HZ);
+      LedOff(GREEN);
      }
     }
   }
-       
       
   
   
