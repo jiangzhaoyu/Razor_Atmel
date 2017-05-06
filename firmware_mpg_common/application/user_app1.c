@@ -59,7 +59,9 @@ Variable names shall start with "UserApp1_" and be declared as static.
 ***********************************************************************************************************************/
 static fnCode_type UserApp1_StateMachine;            /* The state machine function pointer */
 //static u32 UserApp1_u32Timeout;                      /* Timeout counter used across states */
-
+extern u8 G_au8DebugScanfBuffer[];  /* From debug.c */
+extern u8 G_u8DebugScanfCharCount;  /* From debug.c */
+static u8 UserApp_au8UserInputBuffer[USER_INPUT_BUFFER_SIZE];
 
 /**********************************************************************************************************************
 Function Definitions
@@ -88,6 +90,10 @@ Promises:
 */
 void UserApp1Initialize(void)
 {
+  for(u8 i = 0; i < USER_INPUT_BUFFER_SIZE; i++)
+  {
+    UserApp_au8UserInputBuffer[i] = 0;
+  }
   /* If good initialization, set state to Idle */
   if( 1 )
   {
@@ -167,127 +173,44 @@ State Machine Function Definitions
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
 { 
-   static u8 u8InputPassword[20];
-   static u8 u8InputPasswordCount=0;
-   static u8 u8RealPassword[20];
-   static u8 u8RealPasswordCount=0;
-   u8 u8IsPasswardRight=1;
-   static bool IsButton3Pressed=FALSE;
-   static u8 tempButtonValue;
-   static u8 InputButtonValue;                             
-   u8 u8Index;
-   static u8 u8counter=0;
-   
-   
-  if(IsButtonHeld(BUTTON3,1000))
-  {
-    LedOff(RED);
-    LedOff(GREEN);
-    LedBlink(RED, LED_2HZ);
-    LedBlink(GREEN, LED_2HZ);
-    IsButton3Pressed=FALSE;
-  }
-  
- if(IsButton3Pressed == FALSE)
- {
-    tempButtonValue=GetButtonValue();
-  if(tempButtonValue!=0)
-  {
-    if(tempButtonValue!=4)
-    {
-       u8RealPassword[u8RealPasswordCount]=tempButtonValue;
-       u8RealPasswordCount++;
-    }
-  
-    if(tempButtonValue == 4)
-    {  
-      if( u8RealPasswordCount!=0)
-       {
-         IsButton3Pressed=TRUE;
-         LedOff(RED);
-         LedOff(GREEN);
-         LedOn(RED);
-         u8counter=u8RealPasswordCount;
-         u8RealPasswordCount=0;
-       }
-    }
-  }
- }
- 
- if(IsButton3Pressed == TRUE)
-  { 
-    InputButtonValue=GetButtonValue();   
-    if((InputButtonValue!=0)&&(InputButtonValue!=4))
-    {
-      u8InputPassword[u8InputPasswordCount]=InputButtonValue;
-      u8InputPasswordCount++;
-    }
-    
-    if(InputButtonValue == 4)
-    {
-     if(u8InputPasswordCount == u8counter)
-     {
-      u8InputPasswordCount=0;
-      for(u8Index=0;u8Index< u8counter;u8Index++)
+      static u8 u8ButtonValue;
+      u8ButtonValue=GetButtonValue();
+      DebugPrintNumber(u8ButtonValue);
+      static bool Redon=FALSE;
+      if(Redon==FALSE)
       {
-        if(u8InputPassword[u8Index]!=u8RealPassword[u8Index])
+          if(u8ButtonValue==0)
+          {
+            LedOn(RED);
+            Redon=TRUE;
+          }
+      }
+    
+       if(Redon=TRUE)
+       {
+          switch(u8ButtonValue)
         {
-         u8IsPasswardRight=0;
-         break;
+          case 1:
+            LedOn(BLUE);
+            break;
+          case 2:
+            LedOn(PURPLE);
+            break;
+          case 3:
+            LedOff(RED);
+            LedOff(BLUE);
+            LedOff(PURPLE);
+            break;
+          case 4:
+            LedOn(RED);
+            LedOn(BLUE);
+            LedOn(PURPLE);
+            break;
         }
-      }
+        Redon=FALSE;
+       }
+        
    
-      if(u8IsPasswardRight)
-      {       
-        LedBlink(GREEN,LED_2HZ);
-        LedOff(RED);
-      }
-      else 
-      {       
-       LedBlink(RED,LED_2HZ);
-       LedOff(GREEN);
-      }
-    }
-   else 
-     {
-     
-      u8InputPasswordCount=0;
-      LedBlink(RED,LED_2HZ);
-      LedOff(GREEN);
-     }
-    }
-  }
-      
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-   
-  
-   
-
-    
- 
-    
-    
 
    
    
