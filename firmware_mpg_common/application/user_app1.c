@@ -104,14 +104,7 @@ void UserApp1Initialize(void)
     /* The task isn't properly initialized, so shut it down and don't run */
     UserApp1_StateMachine = UserApp1SM_FailedInit;
   }
-  LedOff(PURPLE);
-  LedOff(RED);
-  LedOff(WHITE);
-  LedOff(BLUE);
-  LedOff(CYAN);
-  LedOff(YELLOW);
-  LedOff(GREEN);
-  LedOff(ORANGE);
+  
 
 } /* end UserApp1Initialize() */
 
@@ -140,31 +133,8 @@ void UserApp1RunActiveState(void)
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Private functions                                                                                                  */
 /*--------------------------------------------------------------------------------------------------------------------*/
-static u8 GetButtonValue(void)
-{
-   u8 u8ButtonValue=0;
-   if(WasButtonPressed(BUTTON0))
-  {
-    ButtonAcknowledge(BUTTON0);
-    u8ButtonValue=1;
-  }
-  if(WasButtonPressed(BUTTON1))
-  {
-    ButtonAcknowledge(BUTTON1);
-    u8ButtonValue=2; 
-  }
-  if(WasButtonPressed(BUTTON2))
-  {
-    ButtonAcknowledge(BUTTON2);
-    u8ButtonValue=3;
-  }
-  if(WasButtonPressed(BUTTON3))
-  {
-    ButtonAcknowledge(BUTTON3);
-    u8ButtonValue=4;
-  }
-  return u8ButtonValue;
-}
+
+   
 /**********************************************************************************************************************
 State Machine Function Definitions
 **********************************************************************************************************************/
@@ -173,44 +143,75 @@ State Machine Function Definitions
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
 { 
-      static u8 u8ButtonValue;
-      u8ButtonValue=GetButtonValue();
-      DebugPrintNumber(u8ButtonValue);
-      static bool Redon=FALSE;
-      if(Redon==FALSE)
-      {
-          if(u8ButtonValue==0)
-          {
-            LedOn(RED);
-            Redon=TRUE;
-          }
-      }
+    static u8 au8Myname[]="abc";
+    static u8 u8InputName[10];
+    static u8 u8Counter=0;
+    static u8 u8Counter1=0;
+    static u8 u8Counter2=0;
+    static u8 u8Length=0;
+    u8 u8String[100];
+    u8 u8DataCount=0;
+    u8 u8Index;
     
-       if(Redon=TRUE)
-       {
-          switch(u8ButtonValue)
+    u8DataCount=DebugScanf(u8InputName);
+    if(u8InputName[0] == 'a')
+    {
+        u8Counter++;
+    }
+    else
+    {
+        u8Counter=0;
+    }
+    
+    if(u8Counter == 1)
+    {
+        if(u8InputName[0] == 'b')
         {
-          case 1:
-            LedOn(BLUE);
-            break;
-          case 2:
-            LedOn(PURPLE);
-            break;
-          case 3:
-            LedOff(RED);
-            LedOff(BLUE);
-            LedOff(PURPLE);
-            break;
-          case 4:
-            LedOn(RED);
-            LedOn(BLUE);
-            LedOn(PURPLE);
-            break;
+            u8Counter++;
         }
-        Redon=FALSE;
-       }
-        
-   
+        else
+        {
+            u8Counter=0;
+        }
+      
+    }
+    
+    if(u8Counter == 2)
+    {
+        if(u8InputName[0] == 'c')
+        {
+            u8Counter=0;
+            u8Counter1++;
+        }
+        else
+        {
+            u8Counter=0;
+        }
+    }
+    u8Counter2=u8Counter1;
+    while(u8Counter1)
+    {
+        u8Counter1=u8Counter1/10;
+        u8Length++;
+    }
+      for(u8Index=0;u8Index<u8Length+2;u8Index++)
+      {
+          u8String[u8Index]='*';
+      }
+    if(u8Counter2)
+    {
+      DebugPrintf(u8InputName);
+      DebugPrintf(u8String);
+      DebugPrintf("\r\n");
+      DebugPrintf("*");
+      DebugPrintNumber(u8Counter1);
+      DebugPrintf("*");
+      DebugPrintf(u8String);
+      DebugLineFeed();
+      u8Length=0;
+      u8Counter=0;
+    }
+    
 
    
    
