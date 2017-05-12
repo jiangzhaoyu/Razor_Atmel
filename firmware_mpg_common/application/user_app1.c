@@ -143,76 +143,80 @@ State Machine Function Definitions
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
 { 
-    static u8 au8Myname[]="abc";
-    static u8 u8InputName[10];
-    static u8 u8Counter=0;
-    static u8 u8Counter1=0;
-    static u8 u8Counter2=0;
-    static u8 u8Length=0;
-    u8 u8String[100];
-    u8 u8DataCount=0;
-    u8 u8Index;
-    
-    u8DataCount=DebugScanf(u8InputName);
-    if(u8InputName[0] == 'a')
-    {
-        u8Counter++;
-    }
-    else
-    {
-        u8Counter=0;
-    }
-    
-    if(u8Counter == 1)
-    {
-        if(u8InputName[0] == 'b')
-        {
-            u8Counter++;
-        }
-        else
-        {
-            u8Counter=0;
-        }
-      
-    }
-    
-    if(u8Counter == 2)
-    {
-        if(u8InputName[0] == 'c')
-        {
-            u8Counter=0;
-            u8Counter1++;
-        }
-        else
-        {
-            u8Counter=0;
-        }
-    }
-    u8Counter2=u8Counter1;
-    while(u8Counter1)
-    {
-        u8Counter1=u8Counter1/10;
-        u8Length++;
-    }
-      for(u8Index=0;u8Index<u8Length+2;u8Index++)
+   static u8 au8MyName[]="abcjason";
+   static u8 au8InputName[100];
+   static u8 u8Arry[8];
+   static u8 u8InputChar[10];
+   static u8 u8Counter=0;
+   static u8 u8Counter1=0;
+   static u8 u8Counter2=0;
+   static u8 u8Counter4=0;
+   static bool IsNameRight=TRUE;
+   static bool FirstChar=TRUE;
+   u8 u8Index;
+   u8 u8Index1;
+   u8 u8Index2;
+   u8 u8Index3;
+   u8 u8DataCount=0;
+   
+   
+   u8DataCount=DebugScanf(u8InputChar);
+   
+   if(u8DataCount)
+   {
+      au8InputName[u8Counter]=u8InputChar[0];
+      u8Counter++; 
+   }
+   u8Counter1=u8Counter;
+   u8Counter4=u8Counter;  
+     
+  if(u8Counter>7)
+  {
+      if(FirstChar == TRUE)
       {
-          u8String[u8Index]='*';
+          for(u8Index=7;u8Index<0;u8Index--)
+          {
+              u8Arry[u8Index]= au8InputName[u8Counter1--];
+          }
+          FirstChar=FALSE;
       }
-    if(u8Counter2)
-    {
-      DebugPrintf(u8InputName);
-      DebugPrintf(u8String);
-      DebugPrintf("\r\n");
-      DebugPrintf("*");
-      DebugPrintNumber(u8Counter1);
-      DebugPrintf("*");
-      DebugPrintf(u8String);
-      DebugLineFeed();
-      u8Length=0;
-      u8Counter=0;
-    }
-    
-
+      
+      
+      for(u8Index1=7;u8Index1<0;u8Index1--)
+      {
+          if(u8Arry[u8Index1]!=au8MyName[u8Index1])
+          {
+              IsNameRight=FALSE;
+              break;
+          }
+      }
+      
+      if(IsNameRight == FALSE)
+      {
+          u8Counter2=u8Counter4--;
+          for(u8Index2=7;u8Index2<0;u8Index2--)
+          {
+              u8Arry[u8Index2]=au8InputName[u8Counter2--];
+          }
+          u8Counter2=u8Counter4--;
+      }
+      if(IsNameRight == TRUE)
+      {
+          u8Counter2=u8Counter2-8;
+          if(u8Counter2>7)
+          {
+              for(u8Index3=7;u8Index3<0;u8Index3--)
+              {
+                  u8Arry[u8Index3]=au8InputName[u8Counter2--];
+              }
+          }
+           u8Counter2=u8Counter2-8;
+      }
+             
+      
+  }
+   
+   
    
    
 } /* end UserApp1SM_Idle() */
