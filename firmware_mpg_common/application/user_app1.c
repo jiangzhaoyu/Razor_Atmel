@@ -143,82 +143,79 @@ State Machine Function Definitions
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
 { 
-   static u8 au8MyName[]="abcjason";
-   static u8 au8InputName[100];
-   static u8 u8Arry[8];
-   static u8 u8InputChar[10];
-   static u8 u8Counter=0;
+   u8 u8InputChar[2]={10};
+   static u8 u8InputName[10];
+   static u8 u8Index=0;
+   static u8 u8Index1=1;
+   u8 au8RealName[]="abcabc";
    static u8 u8Counter1=0;
    static u8 u8Counter2=0;
-   static u8 u8Counter4=0;
-   static bool IsNameRight=TRUE;
-   static bool FirstChar=TRUE;
-   u8 u8Index;
-   u8 u8Index1;
-   u8 u8Index2;
-   u8 u8Index3;
-   u8 u8DataCount=0;
+   static u8 u8Counter3=0;  
+   static u8 u8Counter4=0;  
+   static u8 u8StringLength=0; 
+   bool IsNameRight=FALSE;
    
-   
-   u8DataCount=DebugScanf(u8InputChar);
-   
-   if(u8DataCount)
+  
+   DebugScanf(u8InputChar);
+   /*Record number of input character*/
+   if(u8InputChar[0]!=10)
+     {   
+        u8InputName[u8Counter2]=u8InputChar[0];
+        u8Counter2++;
+     }
+   /*judege whether the input char is the same as real name*/
+   if(u8Counter2 == 6)
    {
-      au8InputName[u8Counter]=u8InputChar[0];
-      u8Counter++; 
+      u8Counter2=5;
+      u8InputName[6]='\0';
+      for(u8Index=0;u8Index<6;u8Index++)
+        {
+          if(u8InputName[u8Index]==au8RealName[u8Index])
+           {
+              u8Counter3++;
+           }       
+          if(u8Counter3==6)
+           {
+              u8Counter2=0;
+              u8Counter3=0;
+              u8Counter1++;
+              IsNameRight=TRUE;
+           }
+        }
+        u8Counter3=0;
+      /*If inputted char do not conform to the requirements all the array elements to the left one*/
+     for(u8Index1=1;u8Index1<6;u8Index1++)
+       {
+         u8InputName[u8Index1-1]=u8InputName[u8Index1];   
+       }    
    }
-   u8Counter1=u8Counter;
-   u8Counter4=u8Counter;  
-     
-  if(u8Counter>7)
-  {
-      if(FirstChar == TRUE)
-      {
-          for(u8Index=7;u8Index<0;u8Index--)
-          {
-              u8Arry[u8Index]= au8InputName[u8Counter1--];
-          }
-          FirstChar=FALSE;
-      }
-      
-      
-      for(u8Index1=7;u8Index1<0;u8Index1--)
-      {
-          if(u8Arry[u8Index1]!=au8MyName[u8Index1])
-          {
-              IsNameRight=FALSE;
-              break;
-          }
-      }
-      
-      if(IsNameRight == FALSE)
-      {
-          u8Counter2=u8Counter4--;
-          for(u8Index2=7;u8Index2<0;u8Index2--)
-          {
-              u8Arry[u8Index2]=au8InputName[u8Counter2--];
-          }
-          u8Counter2=u8Counter4--;
-      }
-      if(IsNameRight == TRUE)
-      {
-          u8Counter2=u8Counter2-8;
-          if(u8Counter2>7)
-          {
-              for(u8Index3=7;u8Index3<0;u8Index3--)
-              {
-                  u8Arry[u8Index3]=au8InputName[u8Counter2--];
-              }
-          }
-           u8Counter2=u8Counter2-8;
-      }
-             
-      
-  }
-   
-   
-   
-   
+   /* output the result as required*/
+   if(IsNameRight == TRUE)
+     {
+       u8Counter4=u8Counter2;
+       while(u8Counter4)
+       {
+           u8Counter4=u8Counter4/10;
+           u8StringLength++;
+       }
+       DebugPrintf("\n\r");
+       for(u8Index=0;u8Index<u8StringLength+2;u8Index++)
+         {
+            DebugPrintf("*");
+         }
+        
+        DebugPrintf("\n\r");
+        DebugPrintf("*");
+        DebugPrintNumber(u8Counter1);
+        DebugPrintf("*");
+        DebugPrintf("\n\r");
+      for(u8Index=0;u8Index<u8StringLength+2;u8Index++)
+         {
+            DebugPrintf("*");
+         }
+        DebugPrintf("\n\r");
+     } 
+        u8StringLength=0;
 } /* end UserApp1SM_Idle() */
      
 #if 0
