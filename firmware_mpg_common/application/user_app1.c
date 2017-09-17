@@ -136,7 +136,118 @@ State Machine Function Definitions
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
 {
-    
+  static u8 au8State1[]="\n\rEntering state1\n\r";
+  static u8 au8State2[]="\n\rEntering state2\n\r";
+  static u8 au8Input[2]={0};
+  static u8 u8Button=0;
+  static u8 au8Message1[]="STATE 1";
+  static u8 au8Message2[]="STATE 2";
+  static u16 u16Counter=0;
+  static bool bTime=FALSE;
+ 
+  DebugScanf(au8Input);
+ 
+  
+  if(au8Input[0] == '1'||WasButtonPressed(BUTTON1))
+  {
+      u8Button=1;
+      ButtonAcknowledge(BUTTON1);
+      au8Input[0]=0;
+      au8Input[1]=0;
+  }
+  
+  if(u8Button == 1)
+  {
+      PWMAudioOff(BUZZER1);
+      PWMAudioOff(BUZZER2);
+      LedOff(WHITE);
+      LedOff(PURPLE);
+      LedOff(BLUE);
+      LedOff(CYAN);
+      LedOff(GREEN);
+      LedOff(YELLOW);
+      LedOff(ORANGE);
+      LedOff(RED);
+      LedOff(LCD_RED);
+      LedOff(LCD_GREEN);
+      LedOff(LCD_BLUE);
+      LCDCommand(LCD_CLEAR_CMD);
+      LCDMessage(LINE1_START_ADDR,au8Message1);
+      ButtonAcknowledge(BUTTON1);
+      DebugPrintf(au8State1);
+      LedOn(WHITE);
+      LedOn(PURPLE);
+      LedOn(BLUE);
+      LedOn(CYAN);
+      LedOn(LCD_RED);
+      LedOn(LCD_BLUE);
+      u8Button=0;
+      bTime=FALSE;
+     
+  }
+   
+  if(au8Input[0] == '2'||WasButtonPressed(BUTTON2))
+  {
+      u8Button=2;
+      ButtonAcknowledge(BUTTON2);
+      bTime=TRUE;
+      au8Input[0]=0;
+      au8Input[1]=0;
+  }
+ 
+  if(u8Button == 2)
+  {
+      LedOff(WHITE);
+      LedOff(PURPLE);
+      LedOff(BLUE);
+      LedOff(CYAN);
+      LedOff(GREEN);
+      LedOff(YELLOW);
+      LedOff(ORANGE);
+      LedOff(RED);
+      LedOff(LCD_RED);
+      LedOff(LCD_GREEN);
+      LedOff(LCD_BLUE);
+      LedPWM(LCD_RED, LED_PWM_70);
+      LedPWM(LCD_GREEN, LED_PWM_25);
+      LedPWM(LCD_BLUE, LED_PWM_5);
+      DebugPrintf(au8State2);
+      LCDCommand(LCD_CLEAR_CMD);
+      LCDMessage(LINE1_START_ADDR,au8Message2);
+      LedBlink(GREEN, LED_1HZ);
+      LedBlink(YELLOW, LED_2HZ);
+      LedBlink(ORANGE, LED_4HZ);
+      LedBlink(RED, LED_8HZ);
+      LedOn(LCD_BLUE);
+      PWMAudioOff(BUZZER1);
+      PWMAudioOff(BUZZER2);
+      PWMAudioSetFrequency(BUZZER1, 200);
+      bTime=TRUE;
+      u8Button=0;
+      }
+  
+  if(bTime == TRUE)
+  {
+      u16Counter++;
+      if(u16Counter<100)
+      {
+         PWMAudioOn(BUZZER1);
+      }
+     
+      if(u16Counter == 100)
+      {
+          PWMAudioOff(BUZZER1);
+      }
+      if(u16Counter == 1000)
+      {
+          u16Counter=0;
+          PWMAudioOn(BUZZER1);
+          
+      }
+  }
+ 
+  
+
 } /* end UserApp1SM_Idle() */
      
 #if 0
