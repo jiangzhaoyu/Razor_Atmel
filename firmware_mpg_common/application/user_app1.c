@@ -200,6 +200,8 @@ static void UserApp1SM_Idle(void)
 {
   static u8 au8TestMessage[] = {0, 0, 0, 0, 0xA5, 0, 0, 0};
   u8 au8DataContent[] = "xxxxxxxxxxxxxxxx";
+  u8 au8DataContent1[]="xxxxxxxxxxxxxxxxx";
+  u8 au8DataContent2[]="xxxxxxxxxxxxxxxxx"; 
   
   /* Check all the buttons and update au8TestMessage according to the button state */ 
   au8TestMessage[0] = 0x00;
@@ -260,7 +262,31 @@ static void UserApp1SM_Idle(void)
           au8TestMessage[5]++;
         }
       }
-      AntQueueBroadcastMessage(ANT_CHANNEL_USERAPP, au8TestMessage);
+      
+       if(G_au8AntApiCurrentMessageBytes[ANT_TICK_MSG_EVENT_CODE_INDEX] == EVENT_TRANSFER_TX_FAILED)
+      {
+        au8TestMessage[3]++;
+        if(au8TestMessage[3] == 0)
+        {
+          au8TestMessage[2]++;
+          if(au8TestMessage[2] == 0)
+          {
+            au8TestMessage[1]++;
+          }
+        }
+      }
+      
+      for(u8 i = 0; i < 3; i++)
+      {
+        au8DataContent1[2 * i]=HexToASCIICharUpper(au8TestMessage[i+1]/16);
+        au8DataContent1[2 * i+1]=HexToASCIICharUpper(au8TestMessage[i+1]%16);
+        au8DataContent2[2 * i]=HexToASCIICharUpper(au8TestMessage[i+5]/16);
+        au8DataContent2[2 * i+1]=HexToASCIICharUpper(au8TestMessage[i+5]%16);
+      }
+      /*Displyed on the LCD*/
+      LCDMessage(LINE2_START_ADDR, au8DataContent1);
+      LCDMessage(LINE2_START_ADDR+10, au8DataContent2); 
+      AntQueueAcknowledgedMessage(ANT_CHANNEL_USERAPP, au8TestMessage); 
     }
   } /* end AntReadData() */
   
