@@ -30,11 +30,11 @@ Constants / Definitions
 **********************************************************************************************************************/
 /* Required constants for ANT channel configuration */
 #define ANT_CHANNEL_USERAPP             ANT_CHANNEL_0         /* Channel 0 - 7 */
-#define ANT_CHANNEL_TYPE_USERAPP        CHANNEL_TYPE_SLAVE    /* ANT SLAVE */
-#define ANT_DEVICEID_LO_USERAPP         (u8)0                 /* Low byte of two-byte Device # */
-#define ANT_DEVICEID_HI_USERAPP         (u8)0                 /* High byte of two-byte Device # */
-#define ANT_DEVICE_TYPE_USERAPP         (u8)0                 /* 1 - 255 */
-#define ANT_TRANSMISSION_TYPE_USERAPP   (u8)0                 /* 1-127 (MSB is pairing bit) */
+#define ANT_CHANNEL_TYPE_USERAPP        CHANNEL_TYPE_MASTER    /* ANT SLAVE */
+#define ANT_DEVICEID_LO_USERAPP         (u8)0x34                 /* Low byte of two-byte Device # */
+#define ANT_DEVICEID_HI_USERAPP         (u8)0x12                /* High byte of two-byte Device # */
+#define ANT_DEVICE_TYPE_USERAPP         (u8)1                 /* 1 - 255 */
+#define ANT_TRANSMISSION_TYPE_USERAPP   (u8)1                 /* 1-127 (MSB is pairing bit) */
 #define ANT_CHANNEL_PERIOD_LO_USERAPP   (u8)0x00              /* Low byte of two-byte channel period 0x0001 - 0x7fff */
 #define ANT_CHANNEL_PERIOD_HI_USERAPP   (u8)0x20              /* High byte of two-byte channel period */
 #define ANT_FREQUENCY_USERAPP           (u8)50                /* 2400MHz + this number 0 - 99 */
@@ -44,7 +44,14 @@ Constants / Definitions
 
 /* G_u32UserAppFlags */
 #define _CHANNEL_SYNCED                 0x00000001            /* Set when channel is synced */
-
+#define DBM_LEVEL1          (s8)-99
+#define DBM_LEVEL2          (s8)-84
+#define DBM_LEVEL3          (s8)-76
+#define DBM_LEVEL4          (s8)-69
+#define DBM_LEVEL5          (s8)-63
+#define DBM_LEVEL6          (s8)-58
+#define DBM_LEVEL7          (s8)-54
+#define DBM_LEVEL8          (s8)-51
 
 /**********************************************************************************************************************
 Function Declarations
