@@ -77,16 +77,16 @@ void UserApp1RunActiveState(void);
 /***********************************************************************************************************************
 State Machine Declarations
 ***********************************************************************************************************************/
-static void UserApp1SM_WaitChannelAssign(void);
-static void UserApp1SM_Idle(void);    
-static void UserApp1SM_WaitChannelOpen(void);
-static void UserApp1SM_ChannelOpen(void);
+static void UserApp1SM_WaitChannelAssign_Slave(void);
+static void UserApp1SM_Idle_Slave(void);    
+static void UserApp1SM_WaitChannelOpen_Slave(void);
+static void UserApp1SM_ChannelOpen_Slave(void);
 static void UserApp1SM_WaitChannelClose(void);
 
 static void UserApp1SM_Error(void);         
 static void UserApp1SM_FailedInit(void);        
-
-
+static void UserApp1SM_Configure_Slave(void);
+static void UserApp1SM_Channel_DelayedTime(void);
 #endif /* __USER_APP_H */
 
 

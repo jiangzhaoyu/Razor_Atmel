@@ -97,31 +97,47 @@ Promises:
 */
 void UserApp1Initialize(void)
 {
-  u8 au8WelcomeMessage[] = "ANT SLAVE DEMO";
-  u8 au8Instructions[] = "B0 toggles radio";
-  AntAssignChannelInfoType sAntSetupData;
+  UserApp1_StateMachine = UserApp1SM_Configure_Slave;
   
-  /* Clear screen and place start messages */
-#ifdef EIE1
-  LCDCommand(LCD_CLEAR_CMD);
-  LCDMessage(LINE1_START_ADDR, au8WelcomeMessage); 
-  LCDMessage(LINE2_START_ADDR, au8Instructions); 
 
-  /* Start with LED0 in RED state = channel is not configured */
-  
-#endif /* EIE1 */
-  
-#ifdef MPG2
-  PixelAddressType sStringLocation = {LCD_SMALL_FONT_LINE0, LCD_LEFT_MOST_COLUMN}; 
-  LcdClearScreen();
-  LcdLoadString(au8WelcomeMessage, LCD_FONT_SMALL, &sStringLocation); 
-  sStringLocation.u16PixelRowAddress = LCD_SMALL_FONT_LINE1;
-  LcdLoadString(au8Instructions, LCD_FONT_SMALL, &sStringLocation); 
-  
-  /* Start with LED0 in RED state = channel is not configured */
-  
-#endif /* MPG2 */
-  
+} /* end UserApp1Initialize() */
+
+
+/*----------------------------------------------------------------------------------------------------------------------
+Function UserApp1RunActiveState()
+
+Description:
+Selects and runs one iteration of the current state in the state machine.
+All state machines have a TOTAL of 1ms to execute, so on average n state machines
+may take 1ms / n to execute.
+
+Requires:
+  - State machine function pointer points at current state
+
+Promises:
+  - Calls the function to pointed by the state machine function pointer
+*/
+void UserApp1RunActiveState(void)
+{
+  static bool bTimeDelay=TRUE;
+  static bool bDisplay=TRUE;
+  static bool bLCD=TRUE;
+  UserApp1_StateMachine();
+
+} /* end UserApp1RunActiveState */
+
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/* Private functions                                                                                                  */
+/*--------------------------------------------------------------------------------------------------------------------*/
+
+
+/**********************************************************************************************************************
+State Machine Function Definitions
+**********************************************************************************************************************/
+static void UserApp1SM_Configure_Slave(void)
+{
+  AntAssignChannelInfoType sAntSetupData;
  /* Configure ANT for this application */
   sAntSetupData.AntChannel          = ANT_CHANNEL_USERAPP;
   sAntSetupData.AntChannelType      = ANT_CHANNEL_TYPE_USERAPP;
@@ -145,68 +161,30 @@ void UserApp1Initialize(void)
   if( AntAssignChannel(&sAntSetupData) )
   {
     /* Channel assignment is queued so start timer */
-#ifdef EIE1
+
     UserApp1_u32Timeout = G_u32SystemTime1ms;
-   
-#endif /* EIE1 */
     
-#ifdef MPG2
-    
-#endif /* MPG2 */
-    
-    UserApp1_StateMachine = UserApp1SM_WaitChannelAssign;
+    UserApp1_StateMachine = UserApp1SM_WaitChannelAssign_Slave;
   }
   else
   {
     /* The task isn't properly initialized, so shut it down and don't run */
-
-
     UserApp1_StateMachine = UserApp1SM_Error;
   }
-
-} /* end UserApp1Initialize() */
-
-
-/*----------------------------------------------------------------------------------------------------------------------
-Function UserApp1RunActiveState()
-
-Description:
-Selects and runs one iteration of the current state in the state machine.
-All state machines have a TOTAL of 1ms to execute, so on average n state machines
-may take 1ms / n to execute.
-
-Requires:
-  - State machine function pointer points at current state
-
-Promises:
-  - Calls the function to pointed by the state machine function pointer
-*/
-void UserApp1RunActiveState(void)
-{
-  UserApp1_StateMachine();
-
-} /* end UserApp1RunActiveState */
+}
 
 
-/*--------------------------------------------------------------------------------------------------------------------*/
-/* Private functions                                                                                                  */
-/*--------------------------------------------------------------------------------------------------------------------*/
 
 
-/**********************************************************************************************************************
-State Machine Function Definitions
-**********************************************************************************************************************/
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Wait for the ANT channel assignment to finish */
-static void UserApp1SM_WaitChannelAssign(void)
+static void UserApp1SM_WaitChannelAssign_Slave(void)
 {
   /* Check if the channel assignment is complete */
   if(AntRadioStatusChannel(ANT_CHANNEL_USERAPP) == ANT_CONFIGURED)
   {
-
-
-    UserApp1_StateMachine = UserApp1SM_Idle;
+    UserApp1_StateMachine = UserApp1SM_Idle_Slave;
   }
   
   /* Monitor for timeout */
@@ -221,8 +199,18 @@ static void UserApp1SM_WaitChannelAssign(void)
 
   /*-------------------------------------------------------------------------------------------------------------------*/
 /* Wait for a message to be queued */
-static void UserApp1SM_Idle(void)
+static void UserApp1SM_Idle_Slave(void)
 {
+  static u8 au8StartMessage1[]="Hide and Seek";
+  static u8 au8StartMessage2[]="Press B0 to Start";
+  
+  
+  if(bDisplay=TRUE)
+  {
+    LCDCommand(LCD_CLEAR_CMD);
+    LCDMessage(LINE1_START_ADDR, au8StartMessage1);
+    LCDMessage(LINE2_START_ADDR, au8StartMessage2);
+  }
   /* Look for BUTTON 0 to open channel */
   if(WasButtonPressed(BUTTON0))
   {
@@ -231,14 +219,9 @@ static void UserApp1SM_Idle(void)
     
     /* Queue open channel and change LED0 from yellow to blinking green to indicate channel is opening */
     AntOpenChannelNumber(ANT_CHANNEL_USERAPP);
-
-
-    
-
-    
     /* Set timer and advance states */
     UserApp1_u32Timeout = G_u32SystemTime1ms;
-    UserApp1_StateMachine = UserApp1SM_WaitChannelOpen;
+    UserApp1_StateMachine = UserApp1SM_WaitChannelOpen_Slave;
   }
     
 } /* end UserApp1SM_Idle() */
@@ -246,73 +229,75 @@ static void UserApp1SM_Idle(void)
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Wait for channel to open */
-static void UserApp1SM_WaitChannelOpen(void)
+static void UserApp1SM_WaitChannelOpen_Slave(void)
 {
+  
   /* Monitor the channel status to check if channel is opened */
   if(AntRadioStatusChannel(ANT_CHANNEL_USERAPP) == ANT_OPEN)
   {
-
-    
-    UserApp1_StateMachine = UserApp1SM_ChannelOpen;
+    UserApp1_StateMachine = UserApp1SM_Channel_DelayedTime;
   }
   
   /* Check for timeout */
   if( IsTimeUp(&UserApp1_u32Timeout, TIMEOUT_VALUE) )
   {
     AntCloseChannelNumber(ANT_CHANNEL_USERAPP);
-
- 
-    
-
-    
-    UserApp1_StateMachine = UserApp1SM_Idle;
+    UserApp1_StateMachine = UserApp1SM_Idle_Slave;
   }
     
 } /* end UserApp1SM_WaitChannelOpen() */
 
-
+static void UserApp1SM_Channel_DelayedTime(void)
+{
+  static u32 u32TimeCounter=0;
+  static u8 u8Counter=1;
+  static u8 au8Time[2]="0";
+  
+  if(bTimeDelay=TRUE)
+  {
+    bTimeDelay=FALSE;
+    LCDCommand(LCD_CLEAR_CMD);
+    LCDMessage(LINE1_START_ADDR,"Seeker");
+  }
+  u32TimeCounter++;
+  
+  if(u32TimeCounter=1000*u8Counter)
+  {
+    au8Time[1]=HexToASCIICharUpper(u8Counter);
+    u8Counter++;
+  }
+  
+  if(u32TimeCounter=10000)
+  {
+    u32TimeCounter=0;
+    u8Counter=1;
+    LCDCommand(LCD_CLEAR_CMD);
+    LCDMessage(LINE1_START_ADDR,"Ready or not");
+    LCDMessage(LINE2_START_ADDR,"Here i come");
+    UserApp1_StateMachine = UserApp1SM_ChannelOpen_Slave;
+  }
+}
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Channel is open, so monitor data */
-static void UserApp1SM_ChannelOpen(void)
+static void UserApp1SM_ChannelOpen_Slave(void)
 {
   static u8 u8LastState = 0xff;
   static u8 au8TickMessage[] = "EVENT x\n\r";  /* "x" at index [6] will be replaced by the current code */
   static u8 au8DataContent[] = "xxxxxxxxxxxxxxxx";
   static u8 au8LastAntData[ANT_APPLICATION_MESSAGE_BYTES] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
   static u8 au8TestMessage[] = {0, 0, 0, 0, 0xA5, 0, 0, 0};
-  bool bGotNewData;
   s8 as8dBmLevels[] = {DBM_LEVEL1, DBM_LEVEL2, DBM_LEVEL3, DBM_LEVEL4, 
                        DBM_LEVEL5, DBM_LEVEL6, DBM_LEVEL7, DBM_LEVEL8};
   static u8 u8Rssi;
   LedNumberType aeLedDisplayLevels[] = {RED, ORANGE, YELLOW, GREEN, CYAN, BLUE, PURPLE, WHITE};
 
-  /* Check for BUTTON0 to close channel */
-  if(WasButtonPressed(BUTTON0))
-  {
-    /* Got the button, so complete one-time actions before next state */
-    ButtonAcknowledge(BUTTON0);
-    
-    /* Queue close channel and change LED to blinking green to indicate channel is closing */
-    AntCloseChannelNumber(ANT_CHANNEL_USERAPP);
-    u8LastState = 0xff;
-
-
-    
-
-    
-    /* Set timer and advance states */
-    UserApp1_u32Timeout = G_u32SystemTime1ms;
-    UserApp1_StateMachine = UserApp1SM_WaitChannelClose;
-  } /* end if(WasButtonPressed(BUTTON0)) */
-  
   /* Always check for ANT messages */
   if( AntReadAppMessageBuffer() )
   {
      /* New data message: check what it is */
     if(G_eAntApiCurrentMessageClass == ANT_DATA)
     {
-      UserApp1_u32DataMsgCount++;
-      u8Rssi=G_sAntApiCurrentMessageExtData.s8RSSI;
+      u8Rssi=G_sAntApiCurrentMessageExtData.s8RSSI;  
       for(u8 i=0;i<8;i++)
       {
         if(u8Rssi>as8dBmLevels[i])
@@ -325,112 +310,13 @@ static void UserApp1SM_ChannelOpen(void)
         }
       }
       /* We are synced with a device, so blue is solid */
-     
-
-      /* Check if the new data is the same as the old data and update as we go */
-      bGotNewData = FALSE;
-      for(u8 i = 0; i < ANT_APPLICATION_MESSAGE_BYTES; i++)
-      {
-        if(G_au8AntApiCurrentMessageBytes[i] != au8LastAntData[i])
-        {
-          bGotNewData = TRUE;
-          au8LastAntData[i] = G_au8AntApiCurrentMessageBytes[i];
-
-          au8DataContent[2 * i]     = HexToASCIICharUpper(G_au8AntApiCurrentMessageBytes[i] / 16);
-          au8DataContent[2 * i + 1] = HexToASCIICharUpper(G_au8AntApiCurrentMessageBytes[i] % 16); 
-        }
-      }
-      
-      if(bGotNewData)
-      {
-        /* We got new data: show on LCD */
-#ifdef MPG1
-        LCDClearChars(LINE2_START_ADDR, 20); 
-        LCDMessage(LINE2_START_ADDR, au8DataContent); 
-#endif /* MPG1 */    
-    
-#ifdef MPG2
-        PixelAddressType sStringLocation = {LCD_SMALL_FONT_LINE4, LCD_LEFT_MOST_COLUMN}; 
-        LcdLoadString(au8DataContent, LCD_FONT_SMALL, &sStringLocation); 
-#endif /* MPG2 */
-
-        /* Update our local message counter and send the message back */
-        au8TestMessage[7]++;
-        if(au8TestMessage[7] == 0)
-        {
-          au8TestMessage[6]++;
-          if(au8TestMessage[6] == 0)
-          {
-            au8TestMessage[5]++;
-          }
-        }
-        AntQueueBroadcastMessage(ANT_CHANNEL_USERAPP, au8TestMessage);
-
-        /* Check for a special packet and respond */
-#ifdef MPG1
-        if(G_au8AntApiCurrentMessageBytes[0] == 0xA5)
-        {
-          LedOff(LCD_RED);
-          LedOff(LCD_GREEN);
-          LedOff(LCD_BLUE);
-          
-          if(G_au8AntApiCurrentMessageBytes[1] == 1)
-          {
-            LedOn(LCD_RED);
-          }
-          
-          if(G_au8AntApiCurrentMessageBytes[2] == 1)
-          {
-            LedOn(LCD_GREEN);
-          }
-
-          if(G_au8AntApiCurrentMessageBytes[3] == 1)
-          {
-            LedOn(LCD_BLUE);
-          }
-        }
-#endif /* MPG1 */    
-    
-#ifdef MPG2
-        if(G_au8AntApiCurrentMessageBytes[0] == 0xA5)
-        {
-          
-          
-          if(G_au8AntApiCurrentMessageBytes[1] == 1)
-          {
-           
-          }
-          
-          if(G_au8AntApiCurrentMessageBytes[2] == 1)
-          {
-            
-          }
-
-          if(G_au8AntApiCurrentMessageBytes[3] == 1)
-          {
-            
-          }
-        }
-#endif /* MPG2 */
-      } /* end if(bGotNewData) */
-    } /* end if(G_eAntApiCurrentMessageClass == ANT_DATA) */
+     } /* end if(bGotNewData) */
+     /* end if(G_eAntApiCurrentMessageClass == ANT_DATA) */
     
     else if(G_eAntApiCurrentMessageClass == ANT_TICK)
     {
-      UserApp1_u32TickMsgCount++;
-
-      /* Look at the TICK contents to check the event code and respond only if it's different */
-      if(u8LastState != G_au8AntApiCurrentMessageBytes[ANT_TICK_MSG_EVENT_CODE_INDEX])
-      {
-        /* The state changed so update u8LastState and queue a debug message */
-        u8LastState = G_au8AntApiCurrentMessageBytes[ANT_TICK_MSG_EVENT_CODE_INDEX];
-        au8TickMessage[6] = HexToASCIICharUpper(u8LastState);
-        DebugPrintf(au8TickMessage);
-
-        /* Parse u8LastState to update LED status */
-        
-        /* end switch (G_au8AntApiCurrentMessageBytes) */
-      } /* end if (u8LastState != G_au8AntApiCurrentMessageBytes[ANT_TICK_MSG_EVENT_CODE_INDEX]) */
+      
+       /* end if (u8LastState != G_au8AntApiCurrentMessageBytes[ANT_TICK_MSG_EVENT_CODE_INDEX]) */
     } /* end else if(G_eAntApiCurrentMessageClass == ANT_TICK) */
     
   } /* end AntReadAppMessageBuffer() */
@@ -438,11 +324,8 @@ static void UserApp1SM_ChannelOpen(void)
   /* A slave channel can close on its own, so explicitly check channel status */
   if(AntRadioStatusChannel(ANT_CHANNEL_USERAPP) != ANT_OPEN)
   {
-
-    u8LastState = 0xff;
-    
     UserApp1_u32Timeout = G_u32SystemTime1ms;
-    UserApp1_StateMachine = UserApp1SM_WaitChannelClose;
+    UserApp1_StateMachine = UserApp1SM_WaitChannelClose_Slave;
   } /* if(AntRadioStatusChannel(ANT_CHANNEL_USERAPP) != ANT_OPEN) */
       
 } /* end UserApp1SM_ChannelOpen() */
@@ -450,22 +333,18 @@ static void UserApp1SM_ChannelOpen(void)
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Wait for channel to close */
-static void UserApp1SM_WaitChannelClose(void)
+static void UserApp1SM_WaitChannelClose_Slave(void)
 {
   /* Monitor the channel status to check if channel is closed */
   if(AntRadioStatusChannel(ANT_CHANNEL_USERAPP) == ANT_CLOSED)
   {
 
-    UserApp1_StateMachine = UserApp1SM_Idle;
+    UserApp1_StateMachine = UserApp1SM_Idle_Slave;
   }
   
   /* Check for timeout */
   if( IsTimeUp(&UserApp1_u32Timeout, TIMEOUT_VALUE) )
   {
-
-
-
-    
     UserApp1_StateMachine = UserApp1SM_Error;
   }
     
