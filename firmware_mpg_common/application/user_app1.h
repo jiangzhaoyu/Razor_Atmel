@@ -81,7 +81,7 @@ static void UserApp1SM_WaitChannelAssign_Slave(void);
 static void UserApp1SM_Idle_Slave(void);    
 static void UserApp1SM_WaitChannelOpen_Slave(void);
 static void UserApp1SM_ChannelOpen_Slave(void);
-static void UserApp1SM_WaitChannelClose(void);
+static void UserApp1SM_WaitChannelClose_Slave(void);
 
 static void UserApp1SM_Error(void);         
 static void UserApp1SM_FailedInit(void);        

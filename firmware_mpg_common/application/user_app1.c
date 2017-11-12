@@ -119,9 +119,6 @@ Promises:
 */
 void UserApp1RunActiveState(void)
 {
-  static bool bTimeDelay=TRUE;
-  static bool bDisplay=TRUE;
-  static bool bLCD=TRUE;
   UserApp1_StateMachine();
 
 } /* end UserApp1RunActiveState */
@@ -203,9 +200,9 @@ static void UserApp1SM_Idle_Slave(void)
 {
   static u8 au8StartMessage1[]="Hide and Seek";
   static u8 au8StartMessage2[]="Press B0 to Start";
+  static bool bDisplay=TRUE;
   
-  
-  if(bDisplay=TRUE)
+  if(bDisplay==TRUE)
   {
     LCDCommand(LCD_CLEAR_CMD);
     LCDMessage(LINE1_START_ADDR, au8StartMessage1);
@@ -252,8 +249,10 @@ static void UserApp1SM_Channel_DelayedTime(void)
   static u32 u32TimeCounter=0;
   static u8 u8Counter=1;
   static u8 au8Time[2]="0";
+  static bool bTimeDelay=TRUE;
   
-  if(bTimeDelay=TRUE)
+  
+  if(bTimeDelay==TRUE)
   {
     bTimeDelay=FALSE;
     LCDCommand(LCD_CLEAR_CMD);
@@ -261,13 +260,14 @@ static void UserApp1SM_Channel_DelayedTime(void)
   }
   u32TimeCounter++;
   
-  if(u32TimeCounter=1000*u8Counter)
+  if(u32TimeCounter==1000*u8Counter)
   {
     au8Time[1]=HexToASCIICharUpper(u8Counter);
+    LCDMessage(LINE2_START_ADDR,au8Time);
     u8Counter++;
   }
   
-  if(u32TimeCounter=10000)
+  if(u32TimeCounter==10000)
   {
     u32TimeCounter=0;
     u8Counter=1;
@@ -338,7 +338,6 @@ static void UserApp1SM_WaitChannelClose_Slave(void)
   /* Monitor the channel status to check if channel is closed */
   if(AntRadioStatusChannel(ANT_CHANNEL_USERAPP) == ANT_CLOSED)
   {
-
     UserApp1_StateMachine = UserApp1SM_Idle_Slave;
   }
   
