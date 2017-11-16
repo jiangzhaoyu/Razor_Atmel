@@ -207,6 +207,7 @@ static void UserApp1SM_Idle_Slave(void)
     LCDCommand(LCD_CLEAR_CMD);
     LCDMessage(LINE1_START_ADDR, au8StartMessage1);
     LCDMessage(LINE2_START_ADDR, au8StartMessage2);
+    bDisplay=FALSE;
   }
   /* Look for BUTTON 0 to open channel */
   if(WasButtonPressed(BUTTON0))
@@ -257,6 +258,7 @@ static void UserApp1SM_Channel_DelayedTime(void)
     bTimeDelay=FALSE;
     LCDCommand(LCD_CLEAR_CMD);
     LCDMessage(LINE1_START_ADDR,"Seeker");
+    bTimeDelay=FALSE;
   }
   u32TimeCounter++;
   
