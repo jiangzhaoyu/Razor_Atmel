@@ -83,6 +83,7 @@ static void UserApp1SM_Idle(void);
 static void UserApp1SM_WaitChannelOpen(void);
 static void UserApp1SM_ChannelOpen(void);
 static void UserApp1SM_WaitChannelClose(void);
+static void UserApp1SM_RoleChange(void);
 
 static void UserApp1SM_Error(void);         
 static void UserApp1SM_FailedInit(void);        

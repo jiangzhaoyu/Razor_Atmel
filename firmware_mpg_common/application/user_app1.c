@@ -70,6 +70,9 @@ static fnCode_type UserApp1_StateMachine;            /* The state machine functi
 static u32 UserApp1_u32Timeout;                      /* Timeout counter used across states */
 static bool bDisplay=TRUE;
 static bool bTimeDelay=TRUE;
+static bool bSeeker=TRUE;
+static bool bRoleSeeker=TRUE;
+static bool bStart=TRUE;
 
 /**********************************************************************************************************************
 Function Definitions
@@ -78,7 +81,17 @@ Function Definitions
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Public functions                                                                                                   */
 /*--------------------------------------------------------------------------------------------------------------------*/
-
+static void CloseLed(void)
+{
+  LedOff(WHITE);
+  LedOff(PURPLE);
+  LedOff(BLUE);
+  LedOff(CYAN);
+  LedOff(GREEN);
+  LedOff(YELLOW);
+  LedOff(ORANGE);
+  LedOff(RED);
+}
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Protected functions                                                                                                */
@@ -140,17 +153,7 @@ void UserApp1RunActiveState(void)
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Private functions                                                                                                  */
 /*--------------------------------------------------------------------------------------------------------------------*/
-static void CloseLed(void)
-{
-  LedOff(WHITE);
-  LedOff(PURPLE);
-  LedOff(BLUE);
-  LedOff(CYAN);
-  LedOff(GREEN);
-  LedOff(YELLOW);
-  LedOff(ORANGE);
-  LedOff(RED);
-}
+
 
 /**********************************************************************************************************************
 State Machine Function Definitions
@@ -161,7 +164,7 @@ static void UserApp1SM_Configure(void)
   
  /* Configure ANT for MASTER */
   sAntSetupData.AntChannel          = ANT_CHANNEL_1;
-  sAntSetupData.AntChannelType      = ANT_CHANNEL_TYPE_MASTER;
+  sAntSetupData.AntChannelType      = CHANNEL_TYPE_MASTER;
   sAntSetupData.AntChannelPeriodLo  = ANT_CHANNEL_PERIOD_LO_USERAPP;
   sAntSetupData.AntChannelPeriodHi  = ANT_CHANNEL_PERIOD_HI_USERAPP;
   
@@ -175,7 +178,7 @@ static void UserApp1SM_Configure(void)
   sAntSetupData.AntNetwork = ANT_NETWORK_DEFAULT;
   /*Configure ANT for SLAVE */
   sAntSetupData1.AntChannel          = ANT_CHANNEL_0;
-  sAntSetupData1.AntChannelType      = ANT_CHANNEL_TYPE_SLAVE;
+  sAntSetupData1.AntChannelType      = CHANNEL_TYPE_SLAVE;
   sAntSetupData1.AntChannelPeriodLo  = ANT_CHANNEL_PERIOD_LO_USERAPP;
   sAntSetupData1.AntChannelPeriodHi  = ANT_CHANNEL_PERIOD_HI_USERAPP;
   
@@ -196,11 +199,6 @@ static void UserApp1SM_Configure(void)
     sAntSetupData1.AntNetworkKey[i] = ANT_DEFAULT_NETWORK_KEY;
   }
     
-  
-  
-  
-  
-  
   /* If good initialization, set state to Idle */
   if( AntAssignChannel(&sAntSetupData) )
   {
@@ -261,10 +259,6 @@ static void UserApp1SM_WaitChannelAssign_Slave(void)
 /* Wait for a message to be queued */
 static void UserApp1SM_Idle(void)
 {
-  
-  
-  
-  
   /* Look for BUTTON 0 to open channel */
   if(WasButtonPressed(BUTTON0))
   {
@@ -272,7 +266,8 @@ static void UserApp1SM_Idle(void)
     ButtonAcknowledge(BUTTON0);
     
     /* Queue open channel and change LED0 from yellow to blinking green to indicate channel is opening */
-    AntOpenChannelNumber(ANT_CHANNEL_USERAPP);
+    AntOpenChannelNumber(ANT_CHANNEL_0);
+    AntOpenChannelNumber(ANT_CHANNEL_1);
     /* Set timer and advance states */
     UserApp1_u32Timeout = G_u32SystemTime1ms;
     UserApp1_StateMachine = UserApp1SM_WaitChannelOpen;
@@ -289,7 +284,14 @@ static void UserApp1SM_WaitChannelOpen(void)
   /* Monitor the channel status to check if channel is opened */
   if(AntRadioStatusChannel(ANT_CHANNEL_USERAPP) == ANT_OPEN)
   {
-    UserApp1_StateMachine = UserApp1SM_Channel_DelayedTime;
+    if(bSeeker==TRUE)
+    {
+      UserApp1_StateMachine = UserApp1SM_Channel_DelayedTime;
+    }
+    else
+    {
+      UserApp1_StateMachine = UserApp1SM_ChannelOpen;
+    }
   }
   
   /* Check for timeout */
@@ -339,26 +341,36 @@ static void UserApp1SM_Channel_DelayedTime(void)
 /* Channel is open, so monitor data */
 static void UserApp1SM_ChannelOpen(void)
 {
-  static u8 u8LastState = 0xff;
-  static u8 au8TickMessage[] = "EVENT x\n\r";  /* "x" at index [6] will be replaced by the current code */
-  static u8 au8DataContent[] = "xxxxxxxxxxxxxxxx";
-  static u8 au8LastAntData[ANT_APPLICATION_MESSAGE_BYTES] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-  static u8 au8TestMessage[] = {0, 0, 0, 0, 0xA5, 0, 0, 0};
+  static s8 s8Rssi=-99;
   s8 as8dBmLevels[] = {DBM_LEVEL1, DBM_LEVEL2, DBM_LEVEL3, DBM_LEVEL4, 
                        DBM_LEVEL5, DBM_LEVEL6, DBM_LEVEL7, DBM_LEVEL8};
-  static u8 u8Rssi;
   LedNumberType aeLedDisplayLevels[] = {RED, ORANGE, YELLOW, GREEN, CYAN, BLUE, PURPLE, WHITE};
 
+  if(bStart==TRUE)
+  {
+    bStart=FALSE;
+    if(bRoleSeeker==TRUE)
+  {
+    LCDCommand(LCD_CLEAR_CMD);
+    LCDMessage(LINE1_START_ADDR,"Seeke");
+  }
+    else
+  {
+    LCDCommand(LCD_CLEAR_CMD);
+    LCDMessage(LINE1_START_ADDR,"Hide");
+  }
+  }
+  
   /* Always check for ANT messages */
   if( AntReadAppMessageBuffer() )
   {
      /* New data message: check what it is */
     if(G_eAntApiCurrentMessageClass == ANT_DATA)
     {
-      u8Rssi=G_sAntApiCurrentMessageExtData.s8RSSI;  
+      s8Rssi=G_sAntApiCurrentMessageExtData.s8RSSI;  
       for(u8 i=0;i<8;i++)
       {
-        if(u8Rssi>as8dBmLevels[i])
+        if(s8Rssi>as8dBmLevels[i])
         {
           LedOn(aeLedDisplayLevels[i]);
         }
@@ -366,6 +378,22 @@ static void UserApp1SM_ChannelOpen(void)
         {
           LedOff(aeLedDisplayLevels[i]);
         }
+      }
+      
+      if(s8Rssi>-51)
+      {
+        LCDCommand(LCD_CLEAR_CMD);
+        if(bRoleSeeker==TRUE)
+        {
+          bRoleSeeker=FALSE;
+          LCDMessage(LINE1_START_ADDR,"I found you");
+        }
+        else
+        {
+           LCDMessage(LINE1_START_ADDR,"you find me");
+           bRoleSeeker=TRUE;
+        }
+        
       }
       /* We are synced with a device, so blue is solid */
      } /* end if(bGotNewData) */
@@ -380,7 +408,7 @@ static void UserApp1SM_ChannelOpen(void)
   } /* end AntReadAppMessageBuffer() */
   
   /* A slave channel can close on its own, so explicitly check channel status */
-  if(AntRadioStatusChannel(ANT_CHANNEL_USERAPP) != ANT_OPEN)
+  if(AntRadioStatusChannel(ANT_CHANNEL_0) != ANT_OPEN)
   {
     UserApp1_u32Timeout = G_u32SystemTime1ms;
     UserApp1_StateMachine = UserApp1SM_WaitChannelClose;
@@ -406,7 +434,17 @@ static void UserApp1SM_WaitChannelClose(void)
   }
     
 } /* end UserApp1SM_WaitChannelClose() */
-
+static void UserApp1SM_RoleChange(void)
+{
+  static u32 u32Counter=0;
+  u32Counter++;
+  if(u32Counter==5000)
+  {
+    bStart=TRUE;
+    u32Counter=0;
+    UserApp1_StateMachine = UserApp1SM_ChannelOpen;
+  }
+}
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Handle an error */
