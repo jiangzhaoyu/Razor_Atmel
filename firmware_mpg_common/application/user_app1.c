@@ -73,7 +73,7 @@ static bool bTimeDelay=TRUE;
 static bool bSeeker=TRUE;
 static bool bRoleSeeker=TRUE;
 static bool bStart=TRUE;
-
+AntAssignChannelInfoType sAntSetupData,sAntSetupData1;
 /**********************************************************************************************************************
 Function Definitions
 **********************************************************************************************************************/
@@ -91,7 +91,7 @@ static void CloseLed(void)
   LedOff(YELLOW);
   LedOff(ORANGE);
   LedOff(RED);
-}
+}/*Close all Led */
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Protected functions                                                                                                */
@@ -109,6 +109,7 @@ Requires:
 Promises:
   - 
 */
+/*Game Start*/
 void UserApp1Initialize(void)
 {
   static u8 au8StartMessage1[]="Hide and Seek";
@@ -160,7 +161,7 @@ State Machine Function Definitions
 **********************************************************************************************************************/
 static void UserApp1SM_Configure(void)
 {
-  AntAssignChannelInfoType sAntSetupData,sAntSetupData1;
+  
   
  /* Configure ANT for MASTER */
   sAntSetupData.AntChannel          = ANT_CHANNEL_1;
@@ -226,6 +227,7 @@ static void UserApp1SM_WaitChannelAssign_Master(void)
   /* Check if the channel assignment is complete */
   if(AntRadioStatusChannel(ANT_CHANNEL_1) == ANT_CONFIGURED)
   {
+    AntAssignChannel(&sAntSetupData1);
     UserApp1_StateMachine = UserApp1SM_WaitChannelAssign_Slave;
   }
   
@@ -282,12 +284,13 @@ static void UserApp1SM_WaitChannelOpen(void)
 {
   
   /* Monitor the channel status to check if channel is opened */
-  if(AntRadioStatusChannel(ANT_CHANNEL_USERAPP) == ANT_OPEN)
+  if((AntRadioStatusChannel(ANT_CHANNEL_0) == ANT_OPEN)&&(AntRadioStatusChannel(ANT_CHANNEL_1) == ANT_OPEN))
   {
     if(bSeeker==TRUE)
     {
+      bTimeDelay=TRUE;
       UserApp1_StateMachine = UserApp1SM_Channel_DelayedTime;
-    }
+    }/*If you are a seeker,wait for 10s*/
     else
     {
       UserApp1_StateMachine = UserApp1SM_ChannelOpen;
@@ -303,13 +306,12 @@ static void UserApp1SM_WaitChannelOpen(void)
     
 } /* end UserApp1SM_WaitChannelOpen() */
 
+/*Wait for 10s then start to find the Hider */
 static void UserApp1SM_Channel_DelayedTime(void)
 {
   static u32 u32TimeCounter=0;
   static u8 u8Counter=1;
   static u8 au8Time[2]="0";
-  
-  
   
   if(bTimeDelay==TRUE)
   {
@@ -334,6 +336,7 @@ static void UserApp1SM_Channel_DelayedTime(void)
     LCDCommand(LCD_CLEAR_CMD);
     LCDMessage(LINE1_START_ADDR,"Ready or not");
     LCDMessage(LINE2_START_ADDR,"Here i come");
+    bStart=TRUE;
     UserApp1_StateMachine = UserApp1SM_ChannelOpen;
   }
 }
@@ -346,13 +349,14 @@ static void UserApp1SM_ChannelOpen(void)
                        DBM_LEVEL5, DBM_LEVEL6, DBM_LEVEL7, DBM_LEVEL8};
   LedNumberType aeLedDisplayLevels[] = {RED, ORANGE, YELLOW, GREEN, CYAN, BLUE, PURPLE, WHITE};
 
+
   if(bStart==TRUE)
   {
     bStart=FALSE;
     if(bRoleSeeker==TRUE)
   {
     LCDCommand(LCD_CLEAR_CMD);
-    LCDMessage(LINE1_START_ADDR,"Seeke");
+    LCDMessage(LINE1_START_ADDR,"Seeker");
   }
     else
   {
@@ -361,7 +365,7 @@ static void UserApp1SM_ChannelOpen(void)
   }
   }
   
-  /* Always check for ANT messages */
+  /* The number of the LedOn means the distance between the seeker and hider */
   if( AntReadAppMessageBuffer() )
   {
      /* New data message: check what it is */
@@ -383,17 +387,27 @@ static void UserApp1SM_ChannelOpen(void)
       if(s8Rssi>-51)
       {
         LCDCommand(LCD_CLEAR_CMD);
+        PWMAudioSetFrequency(BUZZER1, 294);
+        PWMAudioOn(BUZZER1);
         if(bRoleSeeker==TRUE)
         {
           bRoleSeeker=FALSE;
           LCDMessage(LINE1_START_ADDR,"I found you");
+          UserApp1_StateMachine = UserApp1SM_RoleChange;
+          
         }
         else
         {
            LCDMessage(LINE1_START_ADDR,"you find me");
            bRoleSeeker=TRUE;
+           UserApp1_StateMachine = UserApp1SM_RoleChange;
+           
         }
         
+      }
+      else
+      {
+        PWMAudioOff(BUZZER1);
       }
       /* We are synced with a device, so blue is solid */
      } /* end if(bGotNewData) */
@@ -411,29 +425,15 @@ static void UserApp1SM_ChannelOpen(void)
   if(AntRadioStatusChannel(ANT_CHANNEL_0) != ANT_OPEN)
   {
     UserApp1_u32Timeout = G_u32SystemTime1ms;
-    UserApp1_StateMachine = UserApp1SM_WaitChannelClose;
+    UserApp1_StateMachine = UserApp1SM_Error;
   } /* if(AntRadioStatusChannel(ANT_CHANNEL_USERAPP) != ANT_OPEN) */
       
 } /* end UserApp1SM_ChannelOpen() */
 
 
 /*-------------------------------------------------------------------------------------------------------------------*/
-/* Wait for channel to close */
-static void UserApp1SM_WaitChannelClose(void)
-{
-  /* Monitor the channel status to check if channel is closed */
-  if(AntRadioStatusChannel(ANT_CHANNEL_USERAPP) == ANT_CLOSED)
-  {
-    UserApp1_StateMachine = UserApp1SM_Idle;
-  }
-  
-  /* Check for timeout */
-  if( IsTimeUp(&UserApp1_u32Timeout, TIMEOUT_VALUE) )
-  {
-    UserApp1_StateMachine = UserApp1SM_Error;
-  }
-    
-} /* end UserApp1SM_WaitChannelClose() */
+
+/*Change the role when the game restart*/
 static void UserApp1SM_RoleChange(void)
 {
   static u32 u32Counter=0;
