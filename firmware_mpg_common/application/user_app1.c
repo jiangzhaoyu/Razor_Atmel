@@ -295,6 +295,7 @@ static void UserApp1SM_WaitChannelOpen(void)
     {
       UserApp1_StateMachine = UserApp1SM_ChannelOpen;
     }
+    bSeeker=!bSeeker;
   }
   
   /* Check for timeout */
@@ -325,17 +326,20 @@ static void UserApp1SM_Channel_DelayedTime(void)
   if(u32TimeCounter==1000*u8Counter)
   {
     au8Time[1]=HexToASCIICharUpper(u8Counter);
-    LCDMessage(LINE2_START_ADDR,au8Time);
+    LCDMessage(LINE1_START_ADDR+15,au8Time);
     u8Counter++;
   }
   
+  if(u32TimeCounter==8000)
+  {
+    LCDCommand(LCD_CLEAR_CMD);
+    LCDMessage(LINE1_START_ADDR,"Ready or not");
+    LCDMessage(LINE2_START_ADDR,"Here i come");
+  }
   if(u32TimeCounter==10000)
   {
     u32TimeCounter=0;
     u8Counter=1;
-    LCDCommand(LCD_CLEAR_CMD);
-    LCDMessage(LINE1_START_ADDR,"Ready or not");
-    LCDMessage(LINE2_START_ADDR,"Here i come");
     bStart=TRUE;
     UserApp1_StateMachine = UserApp1SM_ChannelOpen;
   }
@@ -348,7 +352,7 @@ static void UserApp1SM_ChannelOpen(void)
   s8 as8dBmLevels[] = {DBM_LEVEL1, DBM_LEVEL2, DBM_LEVEL3, DBM_LEVEL4, 
                        DBM_LEVEL5, DBM_LEVEL6, DBM_LEVEL7, DBM_LEVEL8};
   LedNumberType aeLedDisplayLevels[] = {RED, ORANGE, YELLOW, GREEN, CYAN, BLUE, PURPLE, WHITE};
-
+  static u8 au8Frequency[]={50,100,200,262,294,330,392,400};
 
   if(bStart==TRUE)
   {
@@ -361,7 +365,7 @@ static void UserApp1SM_ChannelOpen(void)
     else
   {
     LCDCommand(LCD_CLEAR_CMD);
-    LCDMessage(LINE1_START_ADDR,"Hide");
+    LCDMessage(LINE1_START_ADDR,"Hider");
   }
   }
   
@@ -377,6 +381,8 @@ static void UserApp1SM_ChannelOpen(void)
         if(s8Rssi>as8dBmLevels[i])
         {
           LedOn(aeLedDisplayLevels[i]);
+          PWMAudioSetFrequency(BUZZER1, au8Frequency[i]);
+          PWMAudioOn(BUZZER1);
         }
         else
         {
@@ -384,31 +390,26 @@ static void UserApp1SM_ChannelOpen(void)
         }
       }
       
-      if(s8Rssi>-51)
+      if(s8Rssi>DBM_LEVEL8)
       {
+        AntCloseChannelNumber(ANT_CHANNEL_0);
+        AntCloseChannelNumber(ANT_CHANNEL_1);
         LCDCommand(LCD_CLEAR_CMD);
-        PWMAudioSetFrequency(BUZZER1, 294);
-        PWMAudioOn(BUZZER1);
         if(bRoleSeeker==TRUE)
         {
           bRoleSeeker=FALSE;
           LCDMessage(LINE1_START_ADDR,"I found you");
           UserApp1_StateMachine = UserApp1SM_RoleChange;
-          
         }
         else
         {
-           LCDMessage(LINE1_START_ADDR,"you find me");
-           bRoleSeeker=TRUE;
-           UserApp1_StateMachine = UserApp1SM_RoleChange;
+          LCDMessage(LINE1_START_ADDR,"you find me");
+          bRoleSeeker=TRUE;
+          UserApp1_StateMachine = UserApp1SM_RoleChange;
            
-        }
-        
+        } 
       }
-      else
-      {
-        PWMAudioOff(BUZZER1);
-      }
+      
       /* We are synced with a device, so blue is solid */
      } /* end if(bGotNewData) */
      /* end if(G_eAntApiCurrentMessageClass == ANT_DATA) */
@@ -421,12 +422,7 @@ static void UserApp1SM_ChannelOpen(void)
     
   } /* end AntReadAppMessageBuffer() */
   
-  /* A slave channel can close on its own, so explicitly check channel status */
-  if(AntRadioStatusChannel(ANT_CHANNEL_0) != ANT_OPEN)
-  {
-    UserApp1_u32Timeout = G_u32SystemTime1ms;
-    UserApp1_StateMachine = UserApp1SM_Error;
-  } /* if(AntRadioStatusChannel(ANT_CHANNEL_USERAPP) != ANT_OPEN) */
+  
       
 } /* end UserApp1SM_ChannelOpen() */
 
@@ -438,14 +434,32 @@ static void UserApp1SM_RoleChange(void)
 {
   static u32 u32Counter=0;
   u32Counter++;
-  if(u32Counter==5000)
+  if(u32Counter==3000)
   {
     bStart=TRUE;
     u32Counter=0;
-    UserApp1_StateMachine = UserApp1SM_ChannelOpen;
+    UserApp1_u32Timeout = G_u32SystemTime1ms;
+    UserApp1_StateMachine = UserApp1SM_ClosingChannels;
   }
 }
 
+static void UserApp1SM_ClosingChannels(void)
+{
+  /* Ensure that both channels have opened */
+  if( (AntRadioStatusChannel(ANT_CHANNEL_0) == ANT_CLOSED) &&
+      (AntRadioStatusChannel(ANT_CHANNEL_1) == ANT_CLOSED) )
+  {
+    bStart=TRUE;
+    UserApp1_StateMachine = UserApp1SM_Idle;    
+  }
+
+  /* Check for timeout */
+  if( IsTimeUp(&UserApp1_u32Timeout, TIMEOUT_VALUE) )
+  {
+    AntCloseChannelNumber(ANT_CHANNEL_USERAPP);
+    UserApp1_StateMachine = UserApp1SM_Error;
+  }
+}
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Handle an error */
 static void UserApp1SM_Error(void)          
